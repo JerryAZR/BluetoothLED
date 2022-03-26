@@ -4,19 +4,32 @@
 SoftwareSerial mySerial(2,4); // RX, TX
 // the setup function runs once when you press reset or power the board
 
-#define OUT_PIN 10
+#define YELLOW_PIN  10
+#define WHITE_PIN   9
 void setup() {
   // initialize digital pin LED_BUILTIN as an output.
-  pinMode(OUT_PIN, OUTPUT);
+  pinMode(YELLOW_PIN, OUTPUT);
+  pinMode(WHITE_PIN, OUTPUT);
+  Serial.begin(9600);
   mySerial.begin(9600);
-  setPwmFrequency(OUT_PIN, 8);
+  setPwmFrequency(WHITE_PIN, 8);
+  setPwmFrequency(YELLOW_PIN, 8);
 }
 
 // the loop function runs over and over again forever
-int level = 0;
+uint8_t level = 0;
 void loop() {
   if (mySerial.available()) {
     level = mySerial.read();
-    analogWrite(OUT_PIN, level << 4);
+    if (level & 0x80) {
+      // white
+      level &= 0x7F;
+      analogWrite(WHITE_PIN, level << 1);
+    } else {
+      // yellow
+      analogWrite(YELLOW_PIN, level << 1);
+    }
+    Serial.print("Received: ");
+    Serial.println(level);
   }
 }
