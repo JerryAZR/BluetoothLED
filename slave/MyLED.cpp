@@ -38,22 +38,3 @@ void LEDCtrl::serialPrint() {
   Serial.print("; YELLOW: ");
   Serial.println(yellow);
 }
-
-bool active(int pin) {
-  // active low
-  return (digitalRead(pin) == 0);
-}
-
-
-int getInput() {
-  if(!active(CLK)) return NONE;
-  if (!active(DT) && active(SW)) {
-    return WARM;
-  } else if (!active(DT) && !active(SW)) {
-    return BRIGHT;
-  } else if (active(DT) && active(SW)) {
-    return COLD;
-  } else {
-    return DIM;
-  }
-}

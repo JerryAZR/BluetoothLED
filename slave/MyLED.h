@@ -1,12 +1,7 @@
 #ifndef MY_LED_H
 #define MY_LED_H
 
-// pin numbers
-#define CLK 0
-#define DT  1
-#define SW  2
-
-// option code
+// option code, must be the same as the ones defined in master.h
 #define NONE    0
 #define BRIGHT  1
 #define DIM     2
@@ -18,8 +13,6 @@
 
 #define BYTE_MAX  255
 #define HALF_MAX  127
-
-#define TRIGGER FALLING
 
 typedef unsigned char uint8_t;
 
@@ -35,8 +28,5 @@ struct LEDCtrl {
 };
 
 double bound(double original, double bound);
-LEDCtrl LEDUpdate(int option);
-bool active(int pin);
-int getInput();
 
 #endif

@@ -5,23 +5,23 @@
 */
 
 #include "MyBLE.h" // Override the default BLEDevice definition
-#include "MyLED.h"
+#include "master.h"
 #include <ArduinoBLE.h>
-
-#define SLEEP_TIMEOUT 20000
 
 // variables for button
 
 const char* SERV_UUID = "ffe0";
 const char* CHAR_UUID = "ffe1";
-//String ADDRESS = "98:7b:f3:65:49:ab";
+// Address "98:7b:f3:65:49:ab" --> {0xab, 0x49, 0x65, 0xf3, 0x7b, 0x98}
 uint8_t ADDRESS[6] = {0xab, 0x49, 0x65, 0xf3, 0x7b, 0x98};
 unsigned long prev; // sleep timer
 
 BLEDevice peripheral = BLEDevice(0, ADDRESS);
-LEDCtrl ctrl(0.0, 0.5); // initial: 0 brightness, 0.5 warmth;
 
+// helper functions
 void wakeUp() {}
+bool active(int pin);
+uint8_t getInput();
 
 void setup() {
   Serial.begin(9600);
@@ -73,14 +73,10 @@ void loop() {
     // while the peripheral is connected
 
     // read input and forward to LED
-    int option = getInput();
+    uint8_t option = getInput();
     if (option != NONE) {
-      ctrl.update(option);
-      uint8_t yellow = (ctrl.yellow >> 1) & 0x7F;
-      uint8_t white = (ctrl.white >> 1) | 0x80;
-      ledCharacteristic.writeValue(yellow);
-      ledCharacteristic.writeValue(white);
-      ctrl.serialPrint();
+      // send the option to slave device
+      ledCharacteristic.writeValue(option);
       delay(50);
       while(active(CLK));
       prev = millis(); // reset timer
@@ -103,4 +99,26 @@ void loop() {
   
   Serial.println("Peripheral disconnected");
   Serial.println("Reconnecting");
+}
+
+bool active(int pin) {
+  // active low
+#if (TRIGGER == FALLING)
+  return (digitalRead(pin) == 0);
+#else
+  return (digitalRead(pin) != 0);
+#endif
+}
+
+uint8_t getInput() {
+  if(!active(CLK)) return NONE;
+  if (!active(DT) && active(SW)) {
+    return WARM;
+  } else if (!active(DT) && !active(SW)) {
+    return BRIGHT;
+  } else if (active(DT) && active(SW)) {
+    return COLD;
+  } else {
+    return DIM;
+  }
 }
