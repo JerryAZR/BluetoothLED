@@ -26,8 +26,11 @@ typedef unsigned char uint8_t;
 struct LEDCtrl {
   uint8_t white;
   uint8_t yellow;
+  double brightness;
+  double warmth;
 
-  LEDCtrl(double brightness, double temperature);
+  LEDCtrl(double brightness = 0.0, double warmth = 0.5);
+  void update(int option);
   void serialPrint();
 };
 

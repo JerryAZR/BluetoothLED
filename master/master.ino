@@ -19,6 +19,7 @@ uint8_t ADDRESS[6] = {0xab, 0x49, 0x65, 0xf3, 0x7b, 0x98};
 unsigned long prev; // sleep timer
 
 BLEDevice peripheral = BLEDevice(0, ADDRESS);
+LEDCtrl ctrl(0.0, 0.5); // initial: 0 brightness, 0.5 warmth;
 
 void wakeUp() {}
 
@@ -74,7 +75,7 @@ void loop() {
     // read input and forward to LED
     int option = getInput();
     if (option != NONE) {
-      LEDCtrl ctrl = LEDUpdate(option);
+      ctrl.update(option);
       uint8_t yellow = (ctrl.yellow >> 1) & 0x7F;
       uint8_t white = (ctrl.white >> 1) | 0x80;
       ledCharacteristic.writeValue(yellow);

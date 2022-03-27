@@ -8,21 +8,13 @@ double bound(double original, double bound) {
 }
 
 LEDCtrl::LEDCtrl(double brightness, double warmth) {
-  white = (uint8_t) bound(brightness * (1-warmth), BYTE_MAX);
-  yellow = (uint8_t) bound(brightness * warmth, BYTE_MAX);
+  this->white = (uint8_t) bound(brightness * (1-warmth), BYTE_MAX);
+  this->yellow = (uint8_t) bound(brightness * warmth, BYTE_MAX);
+  this->brightness = brightness;
+  this->warmth = warmth;
 }
 
-void LEDCtrl::serialPrint() {
-  Serial.print("WHITE: ");
-  Serial.print(white);
-  Serial.print("; YELLOW: ");
-  Serial.println(yellow);
-}
-
-LEDCtrl LEDUpdate(int option) {
-  static double brightness = 0.0;
-  static double warmth = 0.5;
-  
+void LEDCtrl::update(int option) {
   switch (option) {
     case BRIGHT:
       brightness = bound(brightness + STEP_B, BYTE_MAX);
@@ -36,7 +28,15 @@ LEDCtrl LEDUpdate(int option) {
     case COLD:
       warmth = bound(warmth - STEP_T, 1);
   }
-  return LEDCtrl(brightness, warmth);
+  white = (uint8_t) bound(brightness * (1-warmth), BYTE_MAX);
+  yellow = (uint8_t) bound(brightness * warmth, BYTE_MAX);
+}
+
+void LEDCtrl::serialPrint() {
+  Serial.print("WHITE: ");
+  Serial.print(white);
+  Serial.print("; YELLOW: ");
+  Serial.println(yellow);
 }
 
 bool active(int pin) {
