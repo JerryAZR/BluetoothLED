@@ -7,16 +7,19 @@
 #define SW  2
 
 // option code
-#define BRIGHT  0
-#define DIM     1
-#define WARM    2
-#define COLD    3
+#define NONE    0
+#define BRIGHT  1
+#define DIM     2
+#define WARM    3
+#define COLD    4
 
 #define STEP_B  8
 #define STEP_T  0.05
 
 #define BYTE_MAX  255
 #define HALF_MAX  127
+
+#define TRIGGER FALLING
 
 typedef unsigned char uint8_t;
 

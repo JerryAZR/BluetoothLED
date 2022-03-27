@@ -46,7 +46,7 @@ bool active(int pin) {
 
 
 int getInput() {
-  while(!active(CLK));
+  if(!active(CLK)) return NONE;
   if (!active(DT) && active(SW)) {
     return WARM;
   } else if (!active(DT) && !active(SW)) {
