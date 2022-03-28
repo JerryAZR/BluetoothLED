@@ -14,6 +14,7 @@
 #define LED_MASTER_H_
 
 #define SLEEP_TIMEOUT 20000
+#define MAX_FAILS 20
 #define TRIGGER FALLING
 
 // pin numbers

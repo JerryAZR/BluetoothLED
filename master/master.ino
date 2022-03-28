@@ -16,6 +16,7 @@
 
 // helper functions
 void wakeUp() {}
+void powerOff();
 bool active(int pin);
 uint8_t getInput();
 inline uint32_t getMask(uint8_t pin);
@@ -56,12 +57,18 @@ void setup() {
 }
 
 void loop() {
-  if (peripheral.connect()) {
-    Serial.println("Connected");
-  } else {
+  int fail_counter = 0;
+  while (!peripheral.connect()) {
     Serial.println("Failed to connect!");
-    return;
+    fail_counter++;
+    // Attempt only a fixed number of times
+    if (fail_counter > MAX_FAILS) {
+      // go to sleep
+      attachInterrupt(digitalPinToInterrupt(CLK), wakeUp, TRIGGER);
+      powerOff();
+    }
   }
+  Serial.println("Connected");
   
   // discover peripheral attributes
   Serial.println("Discovering attributes ...");
@@ -106,7 +113,7 @@ void loop() {
       // Replace the following loop with
       //    while(active(CLK));
       // if using hardware debounce circuit
-      for (int i = 0; i < 8192; i++) {
+      for (int i = 0; i < 1024; i++) {
         if (active(CLK)) i = 0;
       }
       prev = millis(); // reset timer
@@ -114,11 +121,7 @@ void loop() {
       if (millis() - prev > SLEEP_TIMEOUT) {
         // setup interrupt handler
         attachInterrupt(digitalPinToInterrupt(CLK), wakeUp, TRIGGER);
-        __DSB();
-        NRF_POWER->SYSTEMOFF = POWER_SYSTEMOFF_SYSTEMOFF_Enter;
-        __DSB();
-        // Alternatively, include "nrf_power.h"
-        // and call nrf_power_system_off()
+        powerOff();
       }
     }
     // check if report from slave is available
@@ -136,6 +139,14 @@ void loop() {
   
   Serial.println("Peripheral disconnected");
   Serial.println("Reconnecting");
+}
+
+void powerOff() {
+  __DSB();
+  NRF_POWER->SYSTEMOFF = POWER_SYSTEMOFF_SYSTEMOFF_Enter;
+  __DSB();
+  // Alternatively, include "nrf_power.h"
+  // and call nrf_power_system_off()
 }
 
 bool active(int pin) {
