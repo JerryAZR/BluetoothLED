@@ -27,6 +27,8 @@ const char* CHAR_UUID = "ffe1";
 // Address "98:7b:f3:65:49:ab" --> {0xab, 0x49, 0x65, 0xf3, 0x7b, 0x98}
 uint8_t ADDRESS[6] = {0xab, 0x49, 0x65, 0xf3, 0x7b, 0x98};
 unsigned long prev; // sleep timer
+uint16_t newReport;
+uint16_t oldReport;
 
 // pin masks
 const uint32_t CLK_MASK = getMask(CLK);
@@ -47,6 +49,10 @@ void setup() {
   BLE.begin();
 
   // no need to scan for peripherals
+
+  // To wait for the serial ports to be initialized,
+  // add some delay here
+  // delay(1000);
 }
 
 void loop() {
@@ -81,6 +87,8 @@ void loop() {
   }
 
   prev = millis();
+  ledCharacteristic.writeValue((uint8_t)NONE); // request value update
+  oldReport = NONE;
   while (peripheral.connected()) {
     // while the peripheral is connected
 
@@ -89,8 +97,18 @@ void loop() {
     if (option != NONE) {
       // send the option to slave device
       ledCharacteristic.writeValue(option);
-      delay(50);
-      while(active(CLK));
+      oldReport = option;
+
+      // simple debouncer
+      // For reference, according to some random guy on stackoverflow:
+      // digitalRead takes 4.9us to execute on a 16MIPS Arduino Uno
+      // The Seeeduino Xiao runs at 48MHz
+      // Replace the following loop with
+      //    while(active(CLK));
+      // if using hardware debounce circuit
+      for (int i = 0; i < 8192; i++) {
+        if (active(CLK)) i = 0;
+      }
       prev = millis(); // reset timer
     } else {
       if (millis() - prev > SLEEP_TIMEOUT) {
@@ -101,11 +119,18 @@ void loop() {
         __DSB();
         // Alternatively, include "nrf_power.h"
         // and call nrf_power_system_off()
-
-        // Wakeup
-        detachInterrupt(digitalPinToInterrupt(CLK));
-        prev = millis();
       }
+    }
+    // check if report from slave is available
+    // Characteristic.valueUpdated() doesn't seem to work here
+    // so I have to perform the check manually
+    ledCharacteristic.readValue(newReport); // pass by reference
+    if (newReport != oldReport) {
+      Serial.print("Yellow: ");
+      Serial.println(newReport & 0xFF);
+      Serial.print("White: ");
+      Serial.println(newReport >> 8);
+      oldReport = newReport;
     }
   }
   

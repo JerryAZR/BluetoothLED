@@ -20,13 +20,17 @@ void setup() {
 }
 
 // the loop function runs over and over again forever
-uint8_t option = 0;
 void loop() {
   if (mySerial.available()) {
-    option = mySerial.read();
+    uint8_t option = mySerial.read();
     ctrl.update(option);
     analogWrite(WHITE_PIN, ctrl.white);
     analogWrite(YELLOW_PIN, ctrl.yellow);
     ctrl.serialPrint();
+    // report the values back to controller
+    byte msg[2];
+    msg[0] = ctrl.yellow;
+    msg[1] = ctrl.white;
+    mySerial.write(msg, 2);
   }
 }
