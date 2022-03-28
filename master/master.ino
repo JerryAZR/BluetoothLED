@@ -1,27 +1,39 @@
-/*
-  LED Control
-
-  More to be added later
-*/
+/**
+ * @file master.ino
+ * @author Zerui An (anzerui@126.com / jerryazr@gmail.com)
+ * @brief Use a Seeeduino Xiao BLE (wired to a rotary encoder)
+ *        as an LED controller.
+ * @version 0.1
+ * @date 2022-03-27
+ * 
+ * @copyright Copyright (c) 2022
+ * To be added later
+ */
 
 #include "MyBLE.h" // Override the default BLEDevice definition
 #include "master.h"
 #include <ArduinoBLE.h>
 
-// variables for button
+// helper functions
+void wakeUp() {}
+bool active(int pin);
+uint8_t getInput();
+inline uint32_t getMask(uint8_t pin);
+inline bool myDigitalRead(uint32_t portRegVal, uint32_t pinMask);
 
+// variables
 const char* SERV_UUID = "ffe0";
 const char* CHAR_UUID = "ffe1";
 // Address "98:7b:f3:65:49:ab" --> {0xab, 0x49, 0x65, 0xf3, 0x7b, 0x98}
 uint8_t ADDRESS[6] = {0xab, 0x49, 0x65, 0xf3, 0x7b, 0x98};
 unsigned long prev; // sleep timer
 
-BLEDevice peripheral = BLEDevice(0, ADDRESS);
+// pin masks
+const uint32_t CLK_MASK = getMask(CLK);
+const uint32_t DT_MASK = getMask(DT);
+const uint32_t SW_MASK = getMask(SW);
 
-// helper functions
-void wakeUp() {}
-bool active(int pin);
-uint8_t getInput();
+BLEDevice peripheral = BLEDevice(0, ADDRESS);
 
 void setup() {
   Serial.begin(9600);
@@ -111,14 +123,37 @@ bool active(int pin) {
 }
 
 uint8_t getInput() {
-  if(!active(CLK)) return NONE;
-  if (!active(DT) && active(SW)) {
+#ifdef PORT_REG
+  uint32_t portVals = PORT_REG->IN;
+  bool clk = myDigitalRead(portVals, CLK_MASK);
+  bool dt = myDigitalRead(portVals, DT_MASK);
+  bool sw = myDigitalRead(portVals, SW_MASK);
+#else
+  bool clk = active(CLK);
+  bool dt = active(DT);
+  bool sw = active(SW);
+#endif
+  if(!clk) return NONE;
+  if (!dt && sw) {
     return WARM;
-  } else if (!active(DT) && !active(SW)) {
+  } else if (!dt && !sw) {
     return BRIGHT;
-  } else if (active(DT) && active(SW)) {
+  } else if (dt && sw) {
     return COLD;
   } else {
     return DIM;
   }
+}
+
+inline uint32_t getMask(uint8_t pin) {
+  uint32_t pinNum = digitalPinToPinName(pin);
+  return 1 << (pinNum & 0x1F);
+}
+
+inline bool myDigitalRead(uint32_t portRegVal, uint32_t pinMask) {
+#if(TRIGGER == FALLING)
+  return (portRegVal & pinMask) == 0;
+#else
+  return (portRegVal & pinMask) != 0;
+#endif
 }
