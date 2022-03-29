@@ -17,7 +17,7 @@
 // helper functions
 void wakeUp() {}
 void powerOff();
-bool active(int pin);
+bool inline active(int pin);
 uint8_t getInput();
 inline uint32_t getMask(uint8_t pin);
 inline bool myDigitalRead(uint32_t portRegVal, uint32_t pinMask);
@@ -113,7 +113,7 @@ void loop() {
       // Replace the following loop with
       //    while(active(CLK));
       // if using hardware debounce circuit
-      for (int i = 0; i < 1024; i++) {
+      for (int i = 0; i < DEBOUNCE_COUNT; i++) {
         if (active(CLK)) i = 0;
       }
       prev = millis(); // reset timer
@@ -149,7 +149,7 @@ void powerOff() {
   // and call nrf_power_system_off()
 }
 
-bool active(int pin) {
+bool inline active(int pin) {
   // active low
 #if (TRIGGER == FALLING)
   return (digitalRead(pin) == 0);
@@ -159,22 +159,37 @@ bool active(int pin) {
 }
 
 uint8_t getInput() {
+  bool clk, dt, sw;
 #ifdef PORT_REG
   uint32_t portVals = PORT_REG->IN;
-  bool clk = myDigitalRead(portVals, CLK_MASK);
-  bool dt = myDigitalRead(portVals, DT_MASK);
-  bool sw = myDigitalRead(portVals, SW_MASK);
+  clk = myDigitalRead(portVals, CLK_MASK);
 #else
-  bool clk = active(CLK);
-  bool dt = active(DT);
-  bool sw = active(SW);
+  clk = active(CLK);
 #endif
   if(!clk) return NONE;
-  if (!dt && sw) {
+  // wait until the end of clock period
+  for (int i = 0; i < DEBOUNCE_SHORT; i++) {
+#ifdef PORT_REG
+    portVals = PORT_REG->IN;
+    clk = myDigitalRead(portVals, CLK_MASK);
+#else
+    clk = active(CLK);
+#endif
+    if (clk) i = 0;
+  }
+  // read the other pin values
+#ifdef PORT_REG
+  dt = myDigitalRead(portVals, DT_MASK);
+  sw = myDigitalRead(portVals, SW_MASK);
+#else
+  dt = active(DT);
+  sw = active(SW);
+#endif
+  if (dt && sw) {
     return WARM;
-  } else if (!dt && !sw) {
+  } else if (dt && !sw) {
     return BRIGHT;
-  } else if (dt && sw) {
+  } else if (!dt && sw) {
     return COLD;
   } else {
     return DIM;

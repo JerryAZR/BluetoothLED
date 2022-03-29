@@ -13,8 +13,15 @@
 #ifndef LED_MASTER_H_
 #define LED_MASTER_H_
 
+// Constants
+// SLEEP_TIMEOUT: the time in ms before the system shutoff if no action
+// MAX_FAILS: number of failed connection attempts allowed before shutoff
+// DEBOUNCE_COUNT: high value: more stable; low value: more sensitive
+// TRIGGER: FALLING/RISING for active-low/high encoders
 #define SLEEP_TIMEOUT 20000
 #define MAX_FAILS 20
+#define DEBOUNCE_COUNT 1024
+#define DEBOUNCE_SHORT 4
 #define TRIGGER FALLING
 
 // pin numbers
@@ -22,12 +29,14 @@
 // port 1: pin 6-10
 // Use pins from the same port here.
 // This program assumes all pins belong to port 0.
+//
 // For generic use, please refer to the following code example
 //
 // uint8_t pin = D2;
 // uint32_t pinNum = digitalPinToPinName(pin);
 // NRF_GPIO_Type * port = nrf_gpio_pin_port_decode(&pinNum);
 // uint32_t all_gpio_val = port->IN;
+// bool pinState = (all_gpio_val >> (pinNum % 32)) & 1 == 1;
 #define CLK 0
 #define DT  1
 #define SW  2
