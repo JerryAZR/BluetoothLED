@@ -13,6 +13,10 @@
 #ifndef LED_MASTER_H_
 #define LED_MASTER_H_
 
+// Peripheral address
+// Address "98:7b:f3:65:49:ab" --> {0xab, 0x49, 0x65, 0xf3, 0x7b, 0x98}
+//#define ADDRESS {0xab, 0x49, 0x65, 0xf3, 0x7b, 0x98}
+
 // Constants
 // SLEEP_TIMEOUT: the time in ms before the system shutoff if no action
 // MAX_FAILS: number of failed connection attempts allowed before shutoff
@@ -37,13 +41,13 @@
 // NRF_GPIO_Type * port = nrf_gpio_pin_port_decode(&pinNum);
 // uint32_t all_gpio_val = port->IN;
 // bool pinState = (all_gpio_val >> (pinNum % 32)) & 1 == 1;
-#define CLK 0
-#define DT  1
-#define SW  2
+#define CLK_PIN 0
+#define DT_PIN  1
+#define SW_PIN  2
 
-#if (CLK < 6 && DT < 6 && SW < 6)
+#if (CLK_PIN < 6 && DT_PIN < 6 && SW_PIN < 6)
 #define PORT_REG NRF_P0
-#elif (CLK > 5 && DT > 5 && SW > 5)
+#elif (CLK_PIN > 5 && DT_PIN > 5 && SW_PIN > 5)
 #define PORT_REG NRF_P1
 #endif
 

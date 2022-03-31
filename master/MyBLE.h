@@ -1,118 +1,34 @@
-/*
-  Modified by Zerui An on Mar 25, 2022
-  Changed the constructor "BLEDevice(uint8_t addressType, uint8_t address[6])"
-  from protected to public. With this public constructor, it is now possible
-  to connect to a known device without calling "scan()" first.
+#ifndef MY_BLE_H_
+#define MY_BLE_H_
 
-  This file overrides "BLEDevice.h" which is part of the ArduinoBLE library.
+#define DEFAULT_SERVICE_UUID        0xFFE0
+#define DEFAULT_CHARACTERISTIC_UUID 0xFFE1
 
-  Copyright (c) 2018 Arduino SA. All rights reserved.
+#include "bluefruit_common.h"
+#include "BLEClientCharacteristic.h"
+#include "BLEClientService.h"
 
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
+class MyBLE : public BLEClientService {
+  public:
+    MyBLE(
+      uint16_t serviceUuid = DEFAULT_SERVICE_UUID,
+      uint16_t characteristicUuid = DEFAULT_CHARACTERISTIC_UUID);
 
-  This library is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
+    virtual bool  begin(void);
+    virtual bool  discover(uint16_t conn_handle);
 
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+    virtual uint8_t   read        ( void );
+    virtual uint16_t  read        ( uint8_t * buf, uint16_t size );
+    virtual uint16_t  write       ( uint8_t b );
+    virtual uint16_t  write       ( uint8_t * buf, uint16_t size );
+    virtual uint16_t  write_resp  ( uint8_t b );
+    virtual uint16_t  write_resp  ( uint8_t * buf, uint16_t size );
 
-#ifndef _BLE_DEVICE_H_
-#define _BLE_DEVICE_H_
+  protected:
+    virtual void  disconnect(void);
 
-#include <Arduino.h>
-
-#include "BLEService.h"
-
-enum BLEDeviceEvent {
-  BLEConnected = 0,
-  BLEDisconnected = 1,
-  BLEDiscovered = 2,
-
-  BLEDeviceLastEvent
-};
-
-class BLEDevice;
-
-typedef void (*BLEDeviceEventHandler)(BLEDevice device);
-
-class BLEDevice {
-public:
-  BLEDevice();
-  BLEDevice(uint8_t addressType, uint8_t address[6]);
-  virtual ~BLEDevice();
-
-  virtual void poll();
-  virtual void poll(unsigned long timeout);
-
-  virtual bool connected() const;
-  virtual bool disconnect();
-
-  virtual String address() const;
-
-  bool hasLocalName() const;
-    
-  bool hasAdvertisedServiceUuid() const;
-  bool hasAdvertisedServiceUuid(int index) const;
-  int advertisedServiceUuidCount() const;
-
-  String localName() const;
-  String advertisedServiceUuid() const;
-  String advertisedServiceUuid(int index) const;
-
-  virtual int rssi();
-
-  bool connect();
-  bool discoverAttributes();
-  bool discoverService(const char* serviceUuid);
-
-  virtual operator bool() const;
-  virtual bool operator==(const BLEDevice& rhs) const;
-  virtual bool operator!=(const BLEDevice& rhs) const;
-
-  String deviceName();
-  int appearance();
-
-  int serviceCount() const; 
-  bool hasService(const char* uuid) const;
-  bool hasService(const char* uuid, int index) const;
-  BLEService service(int index) const;
-  BLEService service(const char * uuid) const;
-  BLEService service(const char * uuid, int index) const;
-  int characteristicCount() const;
-  bool hasCharacteristic(const char* uuid) const;
-  bool hasCharacteristic(const char* uuid, int index) const;
-  BLECharacteristic characteristic(int index) const;
-  BLECharacteristic characteristic(const char * uuid) const;
-  BLECharacteristic characteristic(const char * uuid, int index) const;
-
-protected:
-  friend class ATTClass;
-  friend class GAPClass;
-
-protected:
-  friend class GAPClass;
-
-  bool hasAddress(uint8_t addressType, uint8_t address[6]);
-
-  void setAdvertisementData(uint8_t type, uint8_t eirDataLength, uint8_t eirData[], int8_t rssi);
-  void setScanResponseData(uint8_t eirDataLength, uint8_t eirData[], int8_t rssi);
-
-  bool discovered();
-
-private:
-  uint8_t _addressType;
-  uint8_t _address[6];
-  uint8_t _advertisementTypeMask;
-  uint8_t _eirDataLength;
-  uint8_t _eirData[31 * 2];
-  int8_t _rssi;
+  private:
+    BLEClientCharacteristic _rtx; // rx and tx char 2 in 1
 };
 
 #endif

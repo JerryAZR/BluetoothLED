@@ -4,130 +4,92 @@
  * @brief Use a Seeeduino Xiao BLE (wired to a rotary encoder)
  *        as an LED controller.
  * @version 0.1
- * @date 2022-03-27
+ * @date 2022-03-30
  * 
  * @copyright Copyright (c) 2022
  * To be added later
  */
 
-#include "MyBLE.h" // Override the default BLEDevice definition
+#include "MyBLE.h"
 #include "master.h"
-#include <ArduinoBLE.h>
+#include "helper.h"
+#include <bluefruit.h>
 
 // helper functions
 void wakeUp() {}
 void powerOff();
 bool inline active(int pin);
-uint8_t getInput();
-inline uint32_t getMask(uint8_t pin);
-inline bool myDigitalRead(uint32_t portRegVal, uint32_t pinMask);
 
 // variables
-const char* SERV_UUID = "ffe0";
-const char* CHAR_UUID = "ffe1";
-// Address "98:7b:f3:65:49:ab" --> {0xab, 0x49, 0x65, 0xf3, 0x7b, 0x98}
-uint8_t ADDRESS[6] = {0xab, 0x49, 0x65, 0xf3, 0x7b, 0x98};
 unsigned long prev; // sleep timer
 uint16_t newReport;
 uint16_t oldReport;
 
-// pin masks
-const uint32_t CLK_MASK = getMask(CLK);
-const uint32_t DT_MASK = getMask(DT);
-const uint32_t SW_MASK = getMask(SW);
-
-BLEDevice peripheral = BLEDevice(0, ADDRESS);
+MyBLE myBLE;
 
 void setup() {
   Serial.begin(9600);
 
   // configure the button pin as input
-  pinMode(CLK, INPUT);
-  pinMode(DT, INPUT);
-  pinMode(SW, INPUT);
+  pinMode(CLK_PIN, INPUT);
+  pinMode(DT_PIN, INPUT);
+  pinMode(SW_PIN, INPUT);
 
   // initialize the Bluetooth® Low Energy hardware
-  BLE.begin();
+  Bluefruit.begin(0, 1);
+  myBLE.begin();
 
-  // no need to scan for peripherals
+  // set callbacks
+  Bluefruit.Central.setConnectCallback(connect_callback);
+  Bluefruit.Central.setDisconnectCallback(disconnect_callback);
+
+  Bluefruit.Scanner.setRxCallback(scan_callback);
+  Bluefruit.Scanner.restartOnDisconnect(true);
+  Bluefruit.Scanner.start(0);
 
   // To wait for the serial ports to be initialized,
   // add some delay here
   // delay(1000);
+  // Attach interrupt
+  // attachInterrupt(digitalPinToInterrupt(CLK_PIN), wakeUp, TRIGGER);
 }
 
 void loop() {
-  int fail_counter = 0;
-  while (!peripheral.connect()) {
-    Serial.println("Failed to connect!");
-    fail_counter++;
-    // Attempt only a fixed number of times
-    if (fail_counter > MAX_FAILS) {
-      // go to sleep
-      attachInterrupt(digitalPinToInterrupt(CLK), wakeUp, TRIGGER);
-      powerOff();
-    }
-  }
-  Serial.println("Connected");
-  
-  // discover peripheral attributes
-  Serial.println("Discovering attributes ...");
-  if (peripheral.discoverAttributes()) {
-    Serial.println("Attributes discovered");
-  } else {
-    Serial.println("Attribute discovery failed!");
-    peripheral.disconnect();
-    return;
-  }
-  
-  // retrieve the LED characteristic
-  BLECharacteristic ledCharacteristic = peripheral.characteristic(CHAR_UUID);
-  
-  if (!ledCharacteristic) {
-    Serial.println("Peripheral does not have LED characteristic!");
-    peripheral.disconnect();
-    return;
-  } else if (!ledCharacteristic.canWrite()) {
-    Serial.println("Peripheral does not have a writable LED characteristic!");
-    peripheral.disconnect();
-    return;
+  if (Bluefruit.Central.connected()) {
+    prev = millis();
+    myBLE.write((uint8_t)NONE); // request value update
+    oldReport = NONE;
   }
 
-  prev = millis();
-  ledCharacteristic.writeValue((uint8_t)NONE); // request value update
-  oldReport = NONE;
-  while (peripheral.connected()) {
+  while (Bluefruit.Central.connected()) {
     // while the peripheral is connected
 
     // read input and forward to LED
     uint8_t option = getInput();
     if (option != NONE) {
       // send the option to slave device
-      ledCharacteristic.writeValue(option);
-      oldReport = option;
-
+      myBLE.write(option);
+      oldReport = (oldReport & 0xFF00) | ((uint16_t) option);
       // simple debouncer
       // For reference, according to some random guy on stackoverflow:
       // digitalRead takes 4.9us to execute on a 16MIPS Arduino Uno
       // The Seeeduino Xiao runs at 48MHz
       // Replace the following loop with
-      //    while(active(CLK));
+      //    while(active(CLK_PIN));
       // if using hardware debounce circuit
       for (int i = 0; i < DEBOUNCE_COUNT; i++) {
-        if (active(CLK)) i = 0;
+        if (active(CLK_PIN)) i = 0;
       }
       prev = millis(); // reset timer
     } else {
       if (millis() - prev > SLEEP_TIMEOUT) {
         // setup interrupt handler
-        attachInterrupt(digitalPinToInterrupt(CLK), wakeUp, TRIGGER);
-        powerOff();
+        // attachInterrupt(digitalPinToInterrupt(CLK_PIN), wakeUp, TRIGGER);
+        // powerOff();
       }
     }
     // check if report from slave is available
-    // Characteristic.valueUpdated() doesn't seem to work here
-    // so I have to perform the check manually
-    ledCharacteristic.readValue(newReport); // pass by reference
+    myBLE.read((uint8_t*)&newReport, 2);
     if (newReport != oldReport) {
       Serial.print("Yellow: ");
       Serial.println(newReport & 0xFF);
@@ -136,15 +98,12 @@ void loop() {
       oldReport = newReport;
     }
   }
-  
-  Serial.println("Peripheral disconnected");
-  Serial.println("Reconnecting");
 }
 
 void powerOff() {
-  __DSB();
-  NRF_POWER->SYSTEMOFF = POWER_SYSTEMOFF_SYSTEMOFF_Enter;
-  __DSB();
+  // __DSB();
+  // NRF_POWER->SYSTEMOFF = POWER_SYSTEMOFF_SYSTEMOFF_Enter;
+  // __DSB();
   // Alternatively, include "nrf_power.h"
   // and call nrf_power_system_off()
 }
@@ -155,56 +114,5 @@ bool inline active(int pin) {
   return (digitalRead(pin) == 0);
 #else
   return (digitalRead(pin) != 0);
-#endif
-}
-
-uint8_t getInput() {
-  bool clk, dt, sw;
-#ifdef PORT_REG
-  uint32_t portVals = PORT_REG->IN;
-  clk = myDigitalRead(portVals, CLK_MASK);
-#else
-  clk = active(CLK);
-#endif
-  if(!clk) return NONE;
-  // wait until the end of clock period
-  for (int i = 0; i < DEBOUNCE_SHORT; i++) {
-#ifdef PORT_REG
-    portVals = PORT_REG->IN;
-    clk = myDigitalRead(portVals, CLK_MASK);
-#else
-    clk = active(CLK);
-#endif
-    if (clk) i = 0;
-  }
-  // read the other pin values
-#ifdef PORT_REG
-  dt = myDigitalRead(portVals, DT_MASK);
-  sw = myDigitalRead(portVals, SW_MASK);
-#else
-  dt = active(DT);
-  sw = active(SW);
-#endif
-  if (dt && sw) {
-    return WARM;
-  } else if (dt && !sw) {
-    return BRIGHT;
-  } else if (!dt && sw) {
-    return COLD;
-  } else {
-    return DIM;
-  }
-}
-
-inline uint32_t getMask(uint8_t pin) {
-  uint32_t pinNum = digitalPinToPinName(pin);
-  return 1 << (pinNum & 0x1F);
-}
-
-inline bool myDigitalRead(uint32_t portRegVal, uint32_t pinMask) {
-#if(TRIGGER == FALLING)
-  return (portRegVal & pinMask) == 0;
-#else
-  return (portRegVal & pinMask) != 0;
 #endif
 }
