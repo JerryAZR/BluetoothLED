@@ -21,7 +21,6 @@
 using namespace constants;
 
 // helper functions
-void wakeUp() {}
 void powerOff();
 bool inline active(int pin);
 
@@ -49,8 +48,9 @@ void setup() {
   Bluefruit.Central.setDisconnectCallback(disconnect_callback);
 
   Bluefruit.Scanner.setRxCallback(scan_callback);
+  Bluefruit.Scanner.setStopCallback(powerOff);
   Bluefruit.Scanner.restartOnDisconnect(true);
-  Bluefruit.Scanner.start(0);
+  Bluefruit.Scanner.start(SCAN_TIMEOUT);
 
   // To wait for the serial ports to be initialized,
   // add some delay here
@@ -92,7 +92,7 @@ void loop() {
       if (millis() - prev > SLEEP_TIMEOUT) {
         // setup interrupt handler
         // attachInterrupt(digitalPinToInterrupt(CLK_PIN), wakeUp, TRIGGER);
-        // powerOff();
+        powerOff();
       }
     }
     // check if report from slave is available
@@ -108,11 +108,11 @@ void loop() {
 }
 
 void powerOff() {
-  // __DSB();
-  // NRF_POWER->SYSTEMOFF = POWER_SYSTEMOFF_SYSTEMOFF_Enter;
-  // __DSB();
-  // Alternatively, include "nrf_power.h"
-  // and call nrf_power_system_off()
+  // Setup wakeup pins, then go to sleep
+  Serial.println("System shutting down...");
+  pinMode(CLK_PIN, INPUT_PULLUP_SENSE);
+  pinMode(SW_PIN, INPUT_PULLUP_SENSE);
+  sd_power_system_off();
 }
 
 bool inline active(int pin) {

@@ -19,13 +19,10 @@
 
 namespace constants {
     // SLEEP_TIMEOUT: the time in ms before the system shutoff if no action
-    // MAX_FAILS: number of failed connection attempts allowed before shutoff
-    // DEBOUNCE_COUNT: high value: more stable; low value: more sensitive
+    // SCAN_TIMEOUT: max scan time (before going to sleep) in 10 ms units
     // ACTIVE: 1 (active high) or 0 (active low)
     const int SLEEP_TIMEOUT     = 20000;
-    const int MAX_FAILS         = 20;
-    const int DEBOUNCE_COUNT    = 1024;
-    const int DEBOUNCE_SHORT    = 4;
+    const int SCAN_TIMEOUT      = 2000;
     const int ACTIVE            = 0;
 
     // pin numbers
