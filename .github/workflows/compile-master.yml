@@ -20,8 +20,8 @@ jobs:
         with:
           # USE Seeeduino XIAO BLE board support package version 1.0.0
           platforms: |
-            - name: "Seeeduino:nrf52"
             - source-url: "https://files.seeedstudio.com/arduino/core/nRF52840/Arduino_core_nRF52840.tar.bz2"
+              name: "Seeeduino:nrf52:xiaonRF52840"
           sketch-paths: |
             # Compile only the master code
             - ./master/
