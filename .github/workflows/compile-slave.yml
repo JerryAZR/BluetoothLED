@@ -1,0 +1,35 @@
+name: Compile Slave Code
+
+# The workflow will run on every push and pull request to the repository
+on:
+  - push
+  - pull_request
+
+jobs:
+  compile-sketch:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        # Test on both versions of Arduino Nano (ATMega328 & ATMega4809)
+        fqbn:
+          - arduino:avr:nano
+          - arduino:megaavr:nona4809
+
+    steps:
+      # This step makes the contents of the repository available to the workflow
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # For more information: https://github.com/arduino/compile-sketches#readme
+      - name: Compile sketch
+        uses: arduino/compile-sketches@v1
+        with:
+          # USE Seeeduino XIAO BLE board support package version 1.0.0
+          fqbn: ${{ matrix.fqbn }}
+          sketch-paths: |
+            # Compile only the master code
+            - ./slave/
+          libraries: |
+            # no additional library is needed
+            -
