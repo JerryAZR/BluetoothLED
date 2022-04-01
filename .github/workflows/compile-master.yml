@@ -19,6 +19,7 @@ jobs:
         uses: arduino/compile-sketches@v1
         with:
           # USE Seeeduino XIAO BLE board support package version 1.0.0
+          fqbn: "Seeeduino:nrf52:xiaonRF52840"
           platforms: |
             - source-url: "https://files.seeedstudio.com/arduino/core/nRF52840/Arduino_core_nRF52840.tar.bz2"
               name: "Seeeduino:nrf52:xiaonRF52840"
