@@ -10,10 +10,15 @@
  * To be added later
  */
 
+#include <bluefruit.h>
+#include "RotaryEncoderD.h"
 #include "MyBLE.h"
 #include "master.h"
 #include "helper.h"
-#include <bluefruit.h>
+
+// Not the best practise, I know.
+// But I'm too lazy to type all the variables explicitly
+using namespace constants;
 
 // helper functions
 void wakeUp() {}
@@ -26,13 +31,13 @@ uint16_t newReport;
 uint16_t oldReport;
 
 MyBLE myBLE;
+RotaryEncoderD<CLK_PIN, DT_PIN> encoder;
 
 void setup() {
   Serial.begin(9600);
 
   // configure the button pin as input
-  pinMode(CLK_PIN, INPUT);
-  pinMode(DT_PIN, INPUT);
+  encoder.begin();
   pinMode(SW_PIN, INPUT);
 
   // initialize the Bluetooth® Low Energy hardware
@@ -65,21 +70,23 @@ void loop() {
     // while the peripheral is connected
 
     // read input and forward to LED
-    uint8_t option = getInput();
+    uint8_t option = NONE;
+    int direction = encoder.read();
+    if (direction == encoder.FORWARD && active(SW_PIN)) {
+      option = WARM;
+    } else if (direction == encoder.FORWARD && !active(SW_PIN)) {
+      option = BRIGHT;
+    } else if (direction == encoder.BACKWARD && active(SW_PIN)) {
+      option = COLD;
+    } else if (direction == encoder.BACKWARD && !active(SW_PIN)) {
+      option = DIM;
+    }
+
     if (option != NONE) {
       // send the option to slave device
       myBLE.write(option);
       oldReport = (oldReport & 0xFF00) | ((uint16_t) option);
-      // simple debouncer
-      // For reference, according to some random guy on stackoverflow:
-      // digitalRead takes 4.9us to execute on a 16MIPS Arduino Uno
-      // The Seeeduino Xiao runs at 48MHz
-      // Replace the following loop with
-      //    while(active(CLK_PIN));
-      // if using hardware debounce circuit
-      for (int i = 0; i < DEBOUNCE_COUNT; i++) {
-        if (active(CLK_PIN)) i = 0;
-      }
+
       prev = millis(); // reset timer
     } else {
       if (millis() - prev > SLEEP_TIMEOUT) {
@@ -110,9 +117,5 @@ void powerOff() {
 
 bool inline active(int pin) {
   // active low
-#if (TRIGGER == FALLING)
-  return (digitalRead(pin) == 0);
-#else
-  return (digitalRead(pin) != 0);
-#endif
+  return (digitalRead(pin) == ACTIVE);
 }

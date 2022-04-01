@@ -32,5 +32,7 @@ void loop() {
     msg[0] = ctrl.yellow;
     msg[1] = ctrl.white;
     mySerial.write(msg, 2);
+    // flush the serial buffer to send the message immediately
+    mySerial.flush();
   }
 }
