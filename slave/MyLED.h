@@ -2,17 +2,19 @@
 #define MY_LED_H
 
 // option code, must be the same as the ones defined in master.h
-#define NONE    0
-#define BRIGHT  1
-#define DIM     2
-#define WARM    3
-#define COLD    4
+enum {
+  NONE    = 0,
+  BRIGHT  = 1,
+  DIM     = 2,
+  WARM    = 3,
+  COLD    = 4
+};
 
-#define STEP_B  8
-#define STEP_T  0.05
+const double STEP_B  = 8;
+const double STEP_T  = 0.05;
 
-#define BYTE_MAX  255
-#define HALF_MAX  127
+const int BYTE_MAX = 255;
+const int HALF_MAX = 127;
 
 typedef unsigned char uint8_t;
 

@@ -2,8 +2,8 @@
 #include "MyLED.h"
 #include <SoftwareSerial.h>
 
-#define YELLOW_PIN  10
-#define WHITE_PIN   9
+const int YELLOW_PIN = 10;
+const int WHITE_PIN  =  9;
 
 SoftwareSerial mySerial(2,4); // RX, TX
 LEDCtrl ctrl(0, 0.5);
@@ -15,6 +15,7 @@ void setup() {
   pinMode(WHITE_PIN, OUTPUT);
   Serial.begin(9600);
   mySerial.begin(9600);
+  // Use prescaler 8
   setPwmFrequency(WHITE_PIN, 8);
   setPwmFrequency(YELLOW_PIN, 8);
 }
