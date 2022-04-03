@@ -1,10 +1,10 @@
 # Bluetooth-Controlled LED
 
-[![Compile Master Action Status](https://github.com/JerryAZR/BluetoothLED/actions/workflows/compile-master.yml/badge.svg)](https://github.com/JerryAZR/BluetoothLED/actions?workflow=Compile+Master+Code)
-[![Compile Slave Action Status](https://github.com/JerryAZR/BluetoothLED/actions/workflows/compile-slave.yml/badge.svg)](https://github.com/JerryAZR/BluetoothLED/actions?workflow=Compile+Slave+Code)
+[![Compile Master Code](https://github.com/JerryAZR/BluetoothLED/actions/workflows/compile-master.yml/badge.svg)](https://github.com/JerryAZR/BluetoothLED/actions/workflows/compile-master.yml)
+[![Compile Slave Code](https://github.com/JerryAZR/BluetoothLED/actions/workflows/compile-slave.yml/badge.svg)](https://github.com/JerryAZR/BluetoothLED/actions/workflows/compile-slave.yml)
 
 More to be added later
 
 ## Parts
-* **IRL540** (logic level MOSFET)
+* **IRL540** (logic level MOSFET, need one for each color)
 * **MAX6817** (switch debouncer, optional)
