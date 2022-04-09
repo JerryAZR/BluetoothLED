@@ -5,7 +5,7 @@
 
 More to be added later
 
-## Parts
+## Parts [中文版本](https://github.com/JerryAZR/BluetoothLED/blob/main/README.md#%E6%8E%A7%E5%88%B6%E5%99%A8%E9%83%A8%E5%88%86)
 
 ### Controller
 
