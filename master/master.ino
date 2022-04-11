@@ -23,6 +23,9 @@ using namespace constants;
 // helper functions
 void powerOff();
 bool inline active(int pin);
+void onForward();
+void onBackward();
+void onPower() ;
 
 // variables
 unsigned long prev; // sleep timer
@@ -32,11 +35,15 @@ uint16_t oldReport;
 MyBLE myBLE;
 RotaryEncoderD<CLK_PIN, DT_PIN> encoder;
 
+uint8_t pending_cmd;
+
 void setup() {
   Serial.begin(9600);
 
   // configure the button pin as input
   encoder.begin();
+  encoder.attachForwardInterrupt(onForward);
+  encoder.attachBackwardInterrupt(onBackward);
   pinMode(SW_PIN, INPUT);
 
   // initialize the Bluetooth® Low Energy hardware
@@ -50,6 +57,7 @@ void setup() {
   Bluefruit.Scanner.setRxCallback(scan_callback);
   Bluefruit.Scanner.setStopCallback(powerOff);
   Bluefruit.Scanner.restartOnDisconnect(true);
+  Bluefruit.Scanner.filterUuid(BLEUuid(DEFAULT_SERVICE_UUID));
   Bluefruit.Scanner.start(SCAN_TIMEOUT);
 
   // To wait for the serial ports to be initialized,
@@ -69,23 +77,11 @@ void loop() {
   while (Bluefruit.Central.connected()) {
     // while the peripheral is connected
 
-    // read input and forward to LED
-    uint8_t option = NONE;
-    int direction = encoder.read();
-    if (direction == encoder.FORWARD && active(SW_PIN)) {
-      option = WARM;
-    } else if (direction == encoder.FORWARD && !active(SW_PIN)) {
-      option = BRIGHT;
-    } else if (direction == encoder.BACKWARD && active(SW_PIN)) {
-      option = COLD;
-    } else if (direction == encoder.BACKWARD && !active(SW_PIN)) {
-      option = DIM;
-    }
-
-    if (option != NONE) {
+    if (pending_cmd != NONE) {
       // send the option to slave device
-      myBLE.write(option);
-      oldReport = (oldReport & 0xFF00) | ((uint16_t) option);
+      myBLE.write(pending_cmd);
+      oldReport = (oldReport & 0xFF00) | ((uint16_t) pending_cmd);
+      pending_cmd = NONE;
 
       prev = millis(); // reset timer
     } else {
@@ -118,4 +114,18 @@ void powerOff() {
 bool inline active(int pin) {
   // active low
   return (digitalRead(pin) == ACTIVE);
+}
+
+void onForward() {
+  if (active(SW_PIN)) pending_cmd = WARM;
+  else pending_cmd = BRIGHT;
+}
+
+void onBackward() {
+  if (active(SW_PIN)) pending_cmd = COLD;
+  else pending_cmd = DIM;
+}
+
+void onPower() {
+  pending_cmd = POWER;
 }

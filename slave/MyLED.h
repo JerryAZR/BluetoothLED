@@ -3,11 +3,12 @@
 
 // option code, must be the same as the ones defined in master.h
 enum {
-  NONE    = 0,
-  BRIGHT  = 1,
-  DIM     = 2,
-  WARM    = 3,
-  COLD    = 4
+  // option codes
+  NONE = 0,
+  BRIGHT,
+  DIM,
+  WARM,
+  COLD
 };
 
 const double STEP_B  = 8;

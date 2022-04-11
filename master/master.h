@@ -30,12 +30,16 @@ namespace constants {
     const int DT_PIN  = 1;
     const int SW_PIN  = 2;
 
-    // option codes
-    const int NONE    = 0;
-    const int BRIGHT  = 1;
-    const int DIM     = 2;
-    const int WARM    = 3;
-    const int COLD    = 4;
+    enum {
+        // option codes
+        NONE = 0,
+        BRIGHT,
+        DIM,
+        WARM,
+        COLD,
+        POWER
+    };
+
 } // namespace constants
 
 #endif
