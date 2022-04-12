@@ -27,7 +27,20 @@ void LEDCtrl::update(int option) {
       break;
     case COLD:
       warmth = bound(warmth - STEP_T, 1);
+      break;
   }
+
+  if (option == POWER) {
+    if (brightness == 0.0) {
+      // Turn on
+      brightness = savedBrightness;
+    } else {
+      // Turn off
+      savedBrightness = brightness;
+      brightness = 0;
+    }
+  }
+
   white = (uint8_t) bound(brightness * (1-warmth), BYTE_MAX);
   yellow = (uint8_t) bound(brightness * warmth, BYTE_MAX);
 }

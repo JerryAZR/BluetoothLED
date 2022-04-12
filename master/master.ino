@@ -26,16 +26,19 @@ bool inline active(int pin);
 void onForward();
 void onBackward();
 void onPower() ;
+void onSwChange();
 
 // variables
 unsigned long prev; // sleep timer
+unsigned long swDownTime;
 uint16_t newReport;
 uint16_t oldReport;
 
 MyBLE myBLE;
 RotaryEncoderD<CLK_PIN, DT_PIN> encoder;
 
-uint8_t pending_cmd;
+volatile uint8_t pending_cmd;
+volatile bool togglePower;
 
 void setup() {
   Serial.begin(9600);
@@ -45,6 +48,8 @@ void setup() {
   encoder.attachForwardInterrupt(onForward);
   encoder.attachBackwardInterrupt(onBackward);
   pinMode(SW_PIN, INPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
+  attachInterrupt(digitalPinToInterrupt(SW_PIN), onSwChange, CHANGE);
 
   // initialize the Bluetooth® Low Energy hardware
   Bluefruit.begin(0, 1);
@@ -119,13 +124,29 @@ bool inline active(int pin) {
 void onForward() {
   if (active(SW_PIN)) pending_cmd = WARM;
   else pending_cmd = BRIGHT;
+  togglePower = false;
 }
 
 void onBackward() {
   if (active(SW_PIN)) pending_cmd = COLD;
   else pending_cmd = DIM;
+  togglePower = false;
 }
 
 void onPower() {
   pending_cmd = POWER;
+}
+
+void onSwChange() {
+  if (active(SW_PIN)) {
+    // start debouncing timer
+    swDownTime = millis();
+    togglePower = true;
+  } else {
+    // check rotation state and debouncing timer
+    if (togglePower && millis() - swDownTime > 10) {
+      pending_cmd = POWER;
+    }
+    togglePower = false;
+  }
 }

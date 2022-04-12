@@ -8,7 +8,8 @@ enum {
   BRIGHT,
   DIM,
   WARM,
-  COLD
+  COLD,
+  POWER
 };
 
 const double STEP_B  = 8;
@@ -23,6 +24,7 @@ struct LEDCtrl {
   uint8_t white;
   uint8_t yellow;
   double brightness;
+  double savedBrightness;
   double warmth;
 
   LEDCtrl(double brightness = 0.0, double warmth = 0.5);

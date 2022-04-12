@@ -8,6 +8,8 @@ const int WHITE_PIN  =  9;
 SoftwareSerial mySerial(2,4); // RX, TX
 LEDCtrl ctrl(0, 0.5);
 
+bool powerState = true;
+
 // the setup function runs once when you press reset or power the board
 void setup() {
   // initialize digital pin LED_BUILTIN as an output.
