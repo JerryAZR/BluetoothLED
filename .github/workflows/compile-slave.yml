@@ -1,4 +1,5 @@
-name: Compile Slave Code
+
+name: Compile Master Code
 
 # The workflow will run on every push and pull request to the repository
 on:
@@ -8,15 +9,12 @@ on:
 jobs:
   compile-sketch:
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        # Test on both versions of Arduino Nano (ATMega328 & ATMega4809)
-        fqbn:
-          - arduino:avr:nano
-          - arduino:megaavr:nona4809
 
     steps:
+      # Install adafruit-nrfutil
+      - name: Install adafruit-nrfutil
+        run: sudo pip3 install adafruit-nrfutil
+
       # This step makes the contents of the repository available to the workflow
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -26,9 +24,13 @@ jobs:
         uses: arduino/compile-sketches@v1
         with:
           # USE Seeeduino XIAO BLE board support package version 1.0.0
-          fqbn: ${{ matrix.fqbn }}
+          fqbn: "Seeeduino:nrf52:xiaonRF52840"
+          platforms: |
+            - source-url: "https://files.seeedstudio.com/arduino/package_seeeduino_boards_index.json"
+              name: "Seeeduino:nrf52"
+              version: "1.0.0"
           sketch-paths: |
-            # Compile only the master code
+            # Compile only the slave code
             - ./slave/
           libraries: |
             # no additional library is needed
