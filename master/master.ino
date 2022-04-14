@@ -31,8 +31,9 @@ void onSwChange();
 // variables
 unsigned long prev; // sleep timer
 unsigned long swDownTime;
-uint16_t newReport;
-uint16_t oldReport;
+uint8_t old_yellow;
+uint8_t old_white;
+uint8_t packet[4] = {0};
 
 MyBLE myBLE;
 RotaryEncoderD<CLK_PIN, DT_PIN> encoder;
@@ -68,15 +69,11 @@ void setup() {
   // To wait for the serial ports to be initialized,
   // add some delay here
   // delay(1000);
-  // Attach interrupt
-  // attachInterrupt(digitalPinToInterrupt(CLK_PIN), wakeUp, TRIGGER);
 }
 
 void loop() {
   if (Bluefruit.Central.connected()) {
     prev = millis();
-    myBLE.write((uint8_t)NONE); // request value update
-    oldReport = NONE;
   }
 
   while (Bluefruit.Central.connected()) {
@@ -84,8 +81,8 @@ void loop() {
 
     if (pending_cmd != NONE) {
       // send the option to slave device
-      myBLE.write(pending_cmd);
-      oldReport = (oldReport & 0xFF00) | ((uint16_t) pending_cmd);
+      packet[0] = pending_cmd;
+      myBLE.write(packet, sizeof(packet));
       pending_cmd = NONE;
 
       prev = millis(); // reset timer
@@ -97,13 +94,14 @@ void loop() {
       }
     }
     // check if report from slave is available
-    myBLE.read((uint8_t*)&newReport, 2);
-    if (newReport != oldReport) {
+    myBLE.read(packet, sizeof(packet));
+    if (packet[1] != old_yellow || packet[2] != old_white) {
+      old_yellow = packet[1];
+      old_white = packet[2];
       Serial.print("Yellow: ");
-      Serial.println(newReport & 0xFF);
+      Serial.println(old_yellow);
       Serial.print("White: ");
-      Serial.println(newReport >> 8);
-      oldReport = newReport;
+      Serial.println(old_white);
     }
   }
 }
