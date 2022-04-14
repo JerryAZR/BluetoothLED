@@ -1,5 +1,4 @@
-
-name: Compile Master Code
+name: Compile Slave Code
 
 # The workflow will run on every push and pull request to the repository
 on:
