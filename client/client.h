@@ -26,9 +26,9 @@ namespace constants {
     const int ACTIVE            = 0;
 
     // pin numbers
-    const int CLK_PIN = 0;
-    const int DT_PIN  = 1;
-    const int SW_PIN  = 2;
+    const int CLK_PIN = 12;
+    const int DT_PIN  = 13;
+    const int SW_PIN  = 14;
 
     enum {
         // option codes
@@ -39,6 +39,9 @@ namespace constants {
         COLD,
         POWER
     };
+
+    const char ssid[] = "RENGER";           // SSID of your home WiFi
+    const char pass[] = "12323323";            // password of your home WiFi
 
 } // namespace constants
 
